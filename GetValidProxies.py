@@ -20,7 +20,7 @@ headers = {
 		'Pragma': 'no-cache',
 		'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
 		'Cache-Control': 'no-cache',
-		'Connection': 'keep-alive',
+		'Connection': 'close',
 		'User-Agent': '''Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) 
 							Chrome/56.0.2924.87 Safari/537.36'''
 }
@@ -90,9 +90,9 @@ def sleepAwhile():
 def getXiciProxies():
     proxyList=[]
     myParser=MyXiciParser()
-    for xiciPage in range(1,6):
-        # html=getLocalWebHtml()        #测试时为了避免多次访问代理网站，所以从一个本地页面读取ip
-        html=getProxyWebHtml('http://www.xicidaili.com/nn/%s'%xiciPage)
+    for xiciPage in range(1,2):
+        html=getLocalWebHtml()        #测试时为了避免多次访问代理网站，所以从一个本地页面读取ip
+        # html=getProxyWebHtml('http://www.xicidaili.com/nn/%s'%xiciPage)
         myParser.feed(html)
         proxyList.extend(myParser.resultList)
         myParser.resultList=[]        #一直使用同一个MyXiciParser对象，所以处理完一个页面后需要清空
@@ -109,17 +109,17 @@ def writeListToTxt(proxyList):
 
 #不同代理网站取得的ip原始数据格式不同，需要整理成为http://123.123.2.2:80的格式。aiohttp使用左侧格式的代理形式
 def arrangeProxyForm(proxyList):
-    proto=''
-    ip=''
-    port=''
+    arrangedProxyList=[]
     for rowNum in range(len(proxyList)):    #rowNum是包含协议、ip、端口的list，3个数据顺序可能不同
+        proto=None;ip=None;port=None
         for data in proxyList[rowNum]:
             if data=='https':break          #aiohttp不支持https代理，所以不保存
-            elif data=='http':proto=data
+            elif data=='http':proto=data    #当第一次为proto赋值后，进入后续循环后proto仍然保留赋值，也就是在新循环中没有新建proto变量，why？
             elif '.' in data:ip=data
             else:port=data
-        proxyList[rowNum]=proto+'://'+ip+':'+port
-    return proxyList
+        try:proto and ip and port;arrangedProxyList.append(proto+'://'+ip+':'+port) #当三个变量都存在时才记录入表
+        except:pass
+    return arrangedProxyList
 
 #拿到代理网站的proxy列表，用aiohttp协程访问httpbin.org/ip，返回有效的代理list，该函数是协程的入口
 #使用协程三部曲：1.用tasks列表封装协程对象；2.在loop中运行tasks；3.从task.result()中取得结果（协程对象的返回值）
@@ -182,7 +182,7 @@ def main():
     validProxyList=filterValidProxies(proxyList)
     for proxy in validProxyList:
         print(proxy)
-    writeListToTxt(validProxyList)
+    writeListToTxt(proxyList)
     print('finish')
 
 
