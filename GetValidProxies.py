@@ -189,10 +189,10 @@ async def doubleCheckProxy(validProxyList):
 #doublecheck的协程对象，doublecheck时最好访问真实需访问的页面，即需要修改该函数
 async def doubleCheckReturnValidProxy(semaphore,session,proxy):
     bandID=random.randint(0,200)
-    doubleCheckUrl='http://www.metal-archives.com/bands/'+str(bandID)
+    doubleCheckUrl='http://www.metal-archives.com/bands//'+'1'
     try:
         async with semaphore:
-            async with session.get(doubleCheckUrl,proxy=proxy,timeout=10) as response:
+            async with session.get(doubleCheckUrl,proxy=proxy,timeout=20) as response:
                 html=await response.text()
                 if response.status==200:return proxy
                 else:return None
